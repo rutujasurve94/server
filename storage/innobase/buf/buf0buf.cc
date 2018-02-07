@@ -1066,9 +1066,9 @@ buf_page_print(const byte* read_buf, ulint zip_size)
 			" InnoDB: Compressed page type (" ULINTPF "); "
 			"stored checksum in field1 " ULINTPF "; "
 			"calculated checksums for field1: "
-			"%s " ULINTPF ", "
-			"%s " ULINTPF ", "
-			"%s " ULINTPF "; "
+			"%s " UINT32PF ", "
+			"%s " UINT32PF ", "
+			"%s " UINT32PF "; "
 			"page LSN " LSN_PF "; "
 			"page number (if stored to page already) " ULINTPF "; "
 			"space id (if stored to page already) " ULINTPF "\n",
@@ -2687,8 +2687,8 @@ buf_zip_decompress(
 
 		ib_logf(IB_LOG_LEVEL_ERROR,
 			"Compressed page checksum mismatch"
-			" for %s [%u:%u]: stored: " ULINTPF ", crc32: " ULINTPF
-			" innodb: " ULINTPF ", none: " ULINTPF ".",
+			" for %s [%u:%u]: stored: " ULINTPF ", crc32: " UINT32PF
+			" innodb: " UINT32PF ", none: " UINT32PF ".",
 			space ? space->chain.start->name : "N/A",
 			block->page.space, block->page.offset,
 			mach_read_from_4(frame + FIL_PAGE_SPACE_OR_CHKSUM),

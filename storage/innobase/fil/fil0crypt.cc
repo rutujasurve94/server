@@ -1,6 +1,6 @@
 /*****************************************************************************
 Copyright (C) 2013, 2015, Google Inc. All Rights Reserved.
-Copyright (c) 2014, 2017, MariaDB Corporation. All Rights Reserved.
+Copyright (c) 2014, 2018, MariaDB Corporation. All Rights Reserved.
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -919,8 +919,10 @@ fil_crypt_calculate_checksum(
 	if (zip_size == 0) {
 		checksum = buf_calc_page_crc32(dst_frame);
 	} else {
-		checksum = page_zip_calc_checksum(dst_frame, zip_size,
-				                  SRV_CHECKSUM_ALGORITHM_CRC32);
+		checksum = page_zip_calc_checksum(
+					dst_frame,
+					zip_size,
+					SRV_CHECKSUM_ALGORITHM_CRC32);
 	}
 
 	return checksum;
@@ -2612,24 +2614,35 @@ fil_space_verify_crypt_checksum(
 		return (true);
 	}
 
-	ib_uint32_t cchecksum1 = 0;
-	ib_uint32_t cchecksum2 = 0;
+	uint32_t cchecksum1 = 0;
+	uint32_t cchecksum2 = 0;
 
 	/* Calculate checksums */
 	if (zip_size) {
 		cchecksum1 = page_zip_calc_checksum(
 			page, zip_size, SRV_CHECKSUM_ALGORITHM_CRC32);
 
-		cchecksum2 = (cchecksum1 == checksum)
-			? 0
-			: page_zip_calc_checksum(
+		if (cchecksum1 != checksum) {
+			cchecksum2 = page_zip_calc_checksum(
 				page, zip_size,
 				SRV_CHECKSUM_ALGORITHM_INNODB);
+		}
+
+		if (cchecksum2 != checksum) {
+			cchecksum2 = page_zip_calc_checksum(
+				page, zip_size,
+				SRV_CHECKSUM_ALGORITHM_CRC32, true);
+		}
 	} else {
 		cchecksum1 = buf_calc_page_crc32(page);
-		cchecksum2 = (cchecksum1 == checksum)
-			? 0
-			: buf_calc_page_new_checksum(page);
+
+		if (cchecksum1 != checksum) {
+			cchecksum2 = buf_calc_page_new_checksum(page);
+		}
+
+		if (cchecksum2 != checksum) {
+			cchecksum2 = buf_calc_page_crc32(page, true);
+		}
 	}
 
 	/* If stored checksum matches one of the calculated checksums
@@ -2673,6 +2686,7 @@ fil_space_verify_crypt_checksum(
 	} else {
 		checksum2 = mach_read_from_4(
 			page + UNIV_PAGE_SIZE - FIL_PAGE_END_LSN_OLD_CHKSUM);
+
 		valid = (buf_page_is_checksum_valid_crc32(page,checksum1,checksum2)
 		|| buf_page_is_checksum_valid_innodb(page,checksum1, checksum2));
 	}
