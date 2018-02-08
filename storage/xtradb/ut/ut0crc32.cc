@@ -116,11 +116,10 @@ ut_crc32_swap_byteorder(
 
 /* CRC32 hardware implementation. */
 
-#if defined(__powerpc__)
+#if defined(__powerpc__) && !defined(WORDS_BIGENDIAN)
 extern "C" {
 unsigned int crc32_vpmsum(unsigned int crc, const unsigned char *p, unsigned long len);
 };
-#endif /* __powerpc__ */
 
 UNIV_INLINE
 ib_uint32_t
@@ -128,23 +127,16 @@ ut_crc32_power8(
 	const byte*	buf,		 /*!< in: data over which to calculate CRC32 */
 	ulint		len)		 /*!< in: data length */
 {
-#if defined(__powerpc__) && !defined(WORDS_BIGENDIAN)
 	return crc32_vpmsum(0, buf, len);
-#else
-	ut_error;
-	/* silence compiler warning about unused parameters */
-	return((ib_uint32_t) buf[len]);
-#endif /* __powerpc__ */
 }
 
-#if defined(__powerpc__)
 ut_crc32_func_t	ut_crc32 = ut_crc32_power8;
 const char*	ut_crc32_implementation = "Using POWER8 crc32 instructions";
 #else
 uint32_t ut_crc32_sw(const byte* buf, ulint len);
 ut_crc32_func_t	ut_crc32 = ut_crc32_sw;
 const char*	ut_crc32_implementation = "Using generic crc32 instructions";
-#endif /* __powerpc__ */
+#endif /* __powerpc__ && !WORDS_BIGENDIAN */
 
 #if (defined(__GNUC__) && defined(__x86_64__)) || defined(_MSC_VER)
 /********************************************************************//**
