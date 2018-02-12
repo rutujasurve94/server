@@ -13,6 +13,10 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301  USA
 
+IF(MSVC)
+  RETURN()
+ENDIF()
+
 # Common warning flags for GCC, G++, Clang and Clang++
 SET(MY_WARNING_FLAGS "-Wall -Wextra -Wformat-security -Wno-init-self")
 MY_CHECK_C_COMPILER_FLAG("-Wvla") # Requires GCC 4.3+ or Clang

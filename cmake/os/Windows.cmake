@@ -120,8 +120,16 @@ IF(MSVC)
     STRING(APPEND ${flag} " /Z7")
    ENDIF()
   ENDFOREACH()
-  
- 
+
+  IF(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+     SET(CLANG_CL_FLAGS
+"-Wno-unused-parameter -Wno-unused-command-line-argument -Wno-pointer-sign -Wno-deprecated-register \
+-Wno-missing-braces -Wno-unused-function -msse4.2 "
+    )
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${CLANG_CL_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CLANG_CL_FLAGS}")
+  ENDIF()
+
   # Fix CMake's predefined huge stack size
   FOREACH(type EXE SHARED MODULE)
    STRING(REGEX REPLACE "/STACK:([^ ]+)" "" CMAKE_${type}_LINKER_FLAGS "${CMAKE_${type}_LINKER_FLAGS}")
@@ -140,7 +148,7 @@ IF(MSVC)
   ENDIF()
   
   # Speed up multiprocessor build
-  IF (MSVC_VERSION GREATER 1400)
+  IF (MSVC_VERSION GREATER 1400 AND (NOT CMAKE_CXX_COMPILER_ID MATCHES Clang))
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
   ENDIF()
@@ -148,7 +156,7 @@ IF(MSVC)
   #TODO: update the code and remove the disabled warnings
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /we4700 /we4311 /we4477 /we4302 /we4090")
   SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /we4099 /we4700 /we4311 /we4477 /we4302 /we4090")
-  IF(MSVC_VERSION GREATER 1910)
+  IF(MSVC_VERSION GREATER 1910  AND (NOT CMAKE_CXX_COMPILER_ID MATCHES Clang))
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
   ENDIF()
   ADD_DEFINITIONS(-D_CRT_NONSTDC_NO_WARNINGS)
