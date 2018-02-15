@@ -11,10 +11,6 @@ create or replace table t1 (
 insert into t1 (x) values (1);
 
 --echo # ALTER ADD SYSTEM VERSIONING should write to mysql.transaction_registry
-create function check_result (cond boolean)
-    returns char(50) deterministic
-    return if(cond = 1, '[CORRECT]', '[INCORRECT]');
-
 set @@system_versioning_alter_history=keep;
 
 create or replace table t1 (x int) engine innodb;
@@ -26,7 +22,7 @@ alter table t1
   add system versioning,
   algorithm=inplace;
 select s from t1 into @trx_start;
-select check_result(count(*) = 1) from mysql.transaction_registry where transaction_id = @trx_start;
+select count(*) = 1 from mysql.transaction_registry where transaction_id = @trx_start;
 
 create or replace table t1 (x int) engine innodb;
 select count(*) from mysql.transaction_registry into @tmp;
@@ -36,7 +32,7 @@ alter table t1
   add period for system_time(s, e),
   add system versioning,
   algorithm=inplace;
-select check_result(count(*) = @tmp) from mysql.transaction_registry;
+select count(*) = @tmp from mysql.transaction_registry;
 
 create or replace table t1 (x int) engine innodb;
 insert into t1 values (1);
@@ -47,7 +43,7 @@ alter table t1
   add system versioning,
   algorithm=copy;
 select s from t1 into @trx_start;
-select check_result(count(*) = 1) from mysql.transaction_registry where transaction_id = @trx_start;
+select count(*) = 1 from mysql.transaction_registry where transaction_id = @trx_start;
 
 create or replace table t1 (x int) engine innodb;
 select count(*) from mysql.transaction_registry into @tmp;
@@ -58,7 +54,7 @@ alter table t1
   add system versioning,
   algorithm=copy;
 # With MDEV-14511 the transaction will be registered even for empty tables.
-select check_result(count(*) = @tmp + 1) from mysql.transaction_registry;
+select count(*) = @tmp + 1 from mysql.transaction_registry;
 
 --echo # TRX_ID to TIMESTAMP versioning switch
 create or replace table t1 (
@@ -106,8 +102,8 @@ select sys_start from t1 where x = 1 into @trx_id1;
 select sys_start from t1 where x = 2 into @trx_id2;
 select sys_start from t1 where x = 3 into @trx_id3;
 
-select check_result(@trx_id1 < @trx_id2 and @trx_id2 < @trx_id3);
-select check_result(@ts1 < @ts2 and @ts2 < @ts3);
+select @trx_id1 < @trx_id2, @trx_id2 < @trx_id3;
+select @ts1 < @ts2, @ts2 < @ts3;
 
 --echo # MVCC is not resolved
 select * from t1 for system_time as of transaction @trx_id1;
