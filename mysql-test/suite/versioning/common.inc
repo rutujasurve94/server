@@ -98,6 +98,7 @@ let $sys_datatype= timestamp(6);
 let $sys_datatype_expl= timestamp(6);
 let $sys_datatype_uc= TIMESTAMP(6);
 let $sys_datatype_expl_uc= TIMESTAMP(6);
+set @max_sys_value= timestamp'2038-01-19 03:14:07.999999';
 
 let $non_sys_datatype= `select sys_datatype(non_default_engine())`;
 let $non_sys_datatype_uc= `select upper(sys_datatype(non_default_engine()))`;
@@ -114,5 +115,6 @@ if ($MTR_COMBINATION_TRX_ID)
 {
   let $sys_datatype_expl= bigint(20) unsigned;
   let $sys_datatype_expl_uc= BIGINT(20) UNSIGNED;
+  set @max_sys_value= 18446744073709551615;
 }
 --enable_query_log

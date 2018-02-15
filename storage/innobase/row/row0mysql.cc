@@ -71,6 +71,11 @@ Created 9/17/2000 Heikki Tuuri
 #include <deque>
 #include <vector>
 
+void innobase_get_query_start(THD *thd, byte *out)
+{
+	return;
+}
+
 /** Provide optional 4.x backwards compatibility for 5.0 and above */
 ibool	row_rollback_on_timeout	= FALSE;
 
@@ -1994,9 +1999,16 @@ run_again:
 		ufield->orig_len = 0;
 		ufield->exp = NULL;
 
-		mach_write_to_8(node->update->vers_sys_value, trx->id);
+		if (col->vers_native())
+		{
+			mach_write_to_8(node->update->vers_sys_value, trx->id);
+		} else {
+			innobase_get_query_start(trx->mysql_thd,
+						 node->update->vers_sys_value);
+		}
+
 		dfield_t* dfield = &ufield->new_val;
-		dfield_set_data(dfield, node->update->vers_sys_value, 8);
+		dfield_set_data(dfield, node->update->vers_sys_value, col->len);
 		dict_col_copy_type(col, &dfield->type);
 
 		uvect->n_fields++;
@@ -2018,7 +2030,6 @@ run_again:
 	err = trx->error_state;
 
 	if (err != DB_SUCCESS) {
-handle_error:
 		que_thr_stop_for_mysql(thr);
 
 		if (err == DB_RECORD_NOT_FOUND) {
@@ -2098,14 +2109,6 @@ handle_error:
 				  && (node->is_delete == PLAIN_DELETE
 				      || node->update->affects_versioned());
 
-		if (vers_set_fields && !prebuilt->versioned_write)
-		{
-			// FIXME: timestamp-based update of row_end in run_again
-			err = DB_UNSUPPORTED;
-			trx->error_state = err;
-
-			goto handle_error;
-		}
 		goto run_again;
 	}
 
