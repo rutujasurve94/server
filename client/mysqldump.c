@@ -4671,6 +4671,11 @@ static int dump_all_tables_in_db(char *database)
       DBUG_RETURN(1);
     }
   }
+  if (opt_routines && mysql_get_server_version(mysql) >= 50009)
+  {
+    DBUG_PRINT("info", ("Dumping routines for database %s", database));
+    dump_routines_for_db(database);
+  }
   while ((table= getTableName(0)))
   {
     char *end= strmov(afterdot, table);
@@ -4741,11 +4746,6 @@ static int dump_all_tables_in_db(char *database)
   {
     DBUG_PRINT("info", ("Dumping events for database %s", database));
     dump_events_for_db(database);
-  }
-  if (opt_routines && mysql_get_server_version(mysql) >= 50009)
-  {
-    DBUG_PRINT("info", ("Dumping routines for database %s", database));
-    dump_routines_for_db(database);
   }
   if (opt_xml)
   {
